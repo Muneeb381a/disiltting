@@ -5,8 +5,9 @@ import {
   UserCircleIcon,
   ShieldCheckIcon,
   UserGroupIcon,
+  XCircleIcon,
 } from "@heroicons/react/24/outline";
-
+import axios from "axios";
 
 const Login = () => {
   const [username, setUsername] = useState("");
@@ -19,16 +20,61 @@ const Login = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-    // try {
-    //   const { data } = await api.post("/login", { username, password, role });
-    //   localStorage.setItem("token", data.token);
-    //   localStorage.setItem("role", data.role);
-    //   navigate(`/${data.role}`);
-    // } catch (err) {
-    //   setError("Invalid credentials. Please try again.");
-    // } finally {
-    //   setIsSubmitting(false);
-    // }
+    setError("");
+
+    const payload = {
+      username: username.trim(),
+      password: password.trim(),
+      role,
+    };
+    console.log("Sending login request:", payload);
+
+    try {
+      const response = await axios.post(
+        "http://localhost:5000/v1/api/login",
+        payload,
+        {
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+      console.log("Response status:", response.status);
+      console.log("Response data:", JSON.stringify(response.data, null, 2));
+
+      // Check for success response
+      if (response.status === 200) {
+        // Try to extract token and role from either data or statusCode
+        const responseData =
+          response.data.data || response.data.statusCode || {};
+        const { token, role: userRole } = responseData;
+
+        if (!token || !userRole) {
+          throw new Error("Missing token or role in response");
+        }
+
+        localStorage.setItem("token", token);
+        localStorage.setItem("role", userRole);
+        console.log("Login successful:", { token, role: userRole });
+        navigate(`/${userRole}`);
+      } else {
+        throw new Error(
+          response.data.message || "Login failed: Unexpected response"
+        );
+      }
+    } catch (err) {
+      console.error("Login error:", {
+        message: err.message,
+        response: err.response?.data,
+        status: err.response?.status,
+        headers: err.response?.headers,
+      });
+      const errorMessage =
+        err.response?.data?.error?.message ||
+        err.message ||
+        "Unable to login. Please try again.";
+      setError(errorMessage);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -42,7 +88,7 @@ const Login = () => {
               </span>
             </h1>
             <p className="text-gray-600 text-sm">
-                Water and Sanitation Agency Faisalabad
+              Water and Sanitation Agency Faisalabad
             </p>
           </div>
 
@@ -103,7 +149,7 @@ const Login = () => {
             {/* Username Field */}
             <div className="space-y-1">
               <label className="text-sm font-medium text-gray-700">
-                Username
+                Username or Email
               </label>
               <div className="relative group">
                 <UserCircleIcon className="h-5 w-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-emerald-500" />
@@ -112,7 +158,7 @@ const Login = () => {
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 outline-none transition-all"
-                  placeholder="Enter username"
+                  placeholder="Enter username or email"
                   required
                 />
               </div>

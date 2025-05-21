@@ -15,7 +15,7 @@ const App = () => {
         <Route path='task' element={<TaskForm />} />
         <Route path='work' element={<SupervisorWorkForm />} />
         <Route path='review' element={<SubmissionReview />} />
-        <Route path='/' element={<AdminDashboard />} />
+        <Route path='/admin' element={<AdminDashboard />} />
         </ Routes>
         </ BrowserRouter>
   )}
